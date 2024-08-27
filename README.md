@@ -57,7 +57,7 @@ int main() {
     emittra::Emittra emitter;
 
     // Register an event listener
-    emitter.on("greet", [](const emittra::Emittra::RespondFunction&, const std::vector<std::any>& args) {
+    emitter.on("greet", [](const auto& respond, const std::vector<std::any>& args) {
         std::cout << "Hello, " << std::any_cast<std::string>(args[0]) << "!" << std::endl;
     });
 
