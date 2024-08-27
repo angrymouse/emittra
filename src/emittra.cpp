@@ -188,7 +188,7 @@ void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
                 }
             };
 
-            // Use parallel execution if there are multiple callbacks
+       
             if (callbacks.size() > 1) {
                 std::vector<std::future<void>> futures;
                 futures.reserve(callbacks.size());
@@ -199,16 +199,12 @@ void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
                     }));
                 }
 
-                // Wait for all callbacks to complete
                 for (auto& future : futures) {
                     future.wait();
                 }
             } else if (callbacks.size() == 1) {
-                // If there's only one callback, execute it directly
                 callbacks[0](respond_func, event.args);
             }
-
-            // If no response was set and there's a promise, set a default value
             if (event.response_promise) {
                 bool expected = false;
                 if (response_set.compare_exchange_strong(expected, true)) {
