@@ -184,8 +184,7 @@ int main() {
 - `size_t try_dequeue_bulk(const std::string& event_name, std::vector<std::vector<std::any>>& bulk_args, size_t max_items)`: Attempts to dequeue multiple events at once.
 
 ## License
-
-AGPL, usage in closed-source projects is strictly prohibited unless explicitly allowed by authors. If you are interested in using Emittra in your closed-source, commercial project, please refer to [contact](#contact) for pricing. All proceeds will go to frequent contributors of Emittra.
+Apache-2.0
 
 ## Contributing
 
