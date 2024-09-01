@@ -23,6 +23,7 @@ public:
 
     void on(const std::string& event_name, EventCallback callback);
     void emit(const std::string& event_name, const std::vector<std::any>& args = {});
+     void emit(const std::string& event_name, const std::vector<std::any>& args = {}, bool notify=false);
     void emit_with_token(const std::string& event_name, moodycamel::ProducerToken& token, const std::vector<std::any>& args = {});
     std::future<std::any> request(const std::string& event_name, const std::vector<std::any>& args = {});
     std::any blockingRequest(const std::string& event_name, const std::vector<std::any>& args = {}, std::chrono::milliseconds timeout = std::chrono::seconds(5));
@@ -35,6 +36,7 @@ public:
     bool try_dequeue(const std::string& event_name, std::vector<std::any>& args);
     bool try_dequeue_with_token(const std::string& event_name, moodycamel::ConsumerToken& token, std::vector<std::any>& args);
     bool enqueue_bulk(const std::string& event_name, const std::vector<std::vector<std::any>>& bulk_args);
+    bool enqueue_bulk(const std::string& event_name, const std::vector<std::vector<std::any>>& bulk_args, bool notify);
     size_t try_dequeue_bulk(const std::string& event_name, std::vector<std::vector<std::any>>& bulk_args, size_t max_items);
 
 private:

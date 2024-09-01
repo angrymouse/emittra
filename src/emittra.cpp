@@ -1,5 +1,6 @@
 #include "emittra.hpp"
 #include <future>
+#include <vector>
 
 namespace emittra {
 
@@ -22,8 +23,15 @@ void Emittra::on(const std::string& event_name, EventCallback callback) {
 void Emittra::emit(const std::string& event_name, const std::vector<std::any>& args) {
     auto event_data = get_or_create_event_data(event_name);
     event_data->event_queue.enqueue({args, nullptr});
-    event_data->cv.notify_one();
-    notify_associated_cvs(event_data);
+
+}
+void Emittra::emit(const std::string& event_name, const std::vector<std::any>& args, bool notify) {
+    auto event_data = get_or_create_event_data(event_name);
+    event_data->event_queue.enqueue({args, nullptr});
+    if(notify){
+        event_data->cv.notify_one();
+        notify_associated_cvs(event_data);
+    }
 }
 
 void Emittra::emit_with_token(const std::string& event_name, moodycamel::ProducerToken& token, const std::vector<std::any>& args) {
@@ -132,12 +140,20 @@ bool Emittra::try_dequeue_with_token(const std::string& event_name, moodycamel::
 
 bool Emittra::enqueue_bulk(const std::string& event_name, const std::vector<std::vector<std::any>>& bulk_args) {
     auto event_data = get_or_create_event_data(event_name);
+    
     std::vector<QueuedEvent> events;
     events.reserve(bulk_args.size());
+
     for (const auto& args : bulk_args) {
-        events.push_back({args, nullptr});
+        events.emplace_back(QueuedEvent{args, nullptr});
     }
-    bool result = event_data->event_queue.enqueue_bulk(events.begin(), events.size());
+
+    return event_data->event_queue.enqueue_bulk(events.data(), events.size());
+}
+
+bool Emittra::enqueue_bulk(const std::string& event_name, const std::vector<std::vector<std::any>>& bulk_args, bool notify){
+    bool result=Emittra::enqueue_bulk(event_name, bulk_args);
+    auto event_data = get_or_create_event_data(event_name);
     event_data->cv.notify_one();
     notify_associated_cvs(event_data);
     return result;
@@ -163,60 +179,39 @@ std::shared_ptr<Emittra::EventData> Emittra::get_or_create_event_data(const std:
     }
     return event_data;
 }
-
 void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
-    const size_t BULK_SIZE = 100;
-    std::vector<QueuedEvent> events(BULK_SIZE);
+    constexpr size_t BULK_SIZE = 50000;
+    std::vector<QueuedEvent> events;
+    events.reserve(BULK_SIZE);
 
-    size_t dequeued_count = event_data->event_queue.try_dequeue_bulk(events.begin(), BULK_SIZE);
+    size_t dequeued_count = event_data->event_queue.try_dequeue_bulk(std::back_inserter(events), BULK_SIZE);
 
     if (dequeued_count > 0) {
-        std::vector<EventCallback> callbacks;
-        {
-            std::shared_lock<std::shared_mutex> lock(event_data->mutex);
-            callbacks = event_data->listeners; // Copy listeners to avoid holding the lock
-        }
+        std::shared_lock<std::shared_mutex> lock(event_data->mutex);
+        
+        for (auto&& event : events) {
+            bool response_set = false;
 
-        for (size_t i = 0; i < dequeued_count; ++i) {
-            const auto& event = events[i];
-            std::atomic<bool> response_set(false);
-
-            auto respond_func = [&response_set, promise = event.response_promise](const std::any& response) {
-                bool expected = false;
-                if (promise && response_set.compare_exchange_strong(expected, true)) {
-                    promise->set_value(response);
+            auto respond_func = [&response_set, &event](const std::any& response) {
+                if (event.response_promise && !response_set) {
+                    event.response_promise->set_value(response);
+                    response_set = true;
                 }
             };
 
-       
-            if (callbacks.size() > 1) {
-                std::vector<std::future<void>> futures;
-                futures.reserve(callbacks.size());
-
-                for (const auto& callback : callbacks) {
-                    futures.emplace_back(std::async(std::launch::async, [&]() {
-                            callback(respond_func, event.args);
-                    }));
-                }
-
-                for (auto& future : futures) {
-                    future.wait();
-                }
-            } else if (callbacks.size() == 1) {
-                callbacks[0](respond_func, event.args);
+            for (const auto& callback : event_data->listeners) {
+                std::invoke(callback, respond_func, event.args);
             }
-            if (event.response_promise) {
-                bool expected = false;
-                if (response_set.compare_exchange_strong(expected, true)) {
-                    event.response_promise->set_value(std::any());
-                }
+
+            if (event.response_promise && !response_set) {
+                event.response_promise->set_value(std::any());
             }
         }
-
+        lock.unlock(); 
         event_data->cv.notify_all();
+        notify_associated_cvs(event_data);
     }
 }
-
 void Emittra::notify_associated_cvs(const std::shared_ptr<EventData>& event_data) {
     std::shared_lock<std::shared_mutex> lock(event_data->mutex);
     for (auto it = event_data->associated_cvs.begin(); it != event_data->associated_cvs.end();) {
