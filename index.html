@@ -2,235 +2,333 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emittra - Advanced Event-Driven C++ Framework</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.24.1/themes/prism-tomorrow.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.24.1/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@v1.x/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
-    <style>
-        @keyframes triangleMotion {
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emittra - Threadsafe, Performant, Simple Library for Event-Driven Programming in C++</title>
+  <!-- Using "Unbounded" for a distinctive, modern look -->
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Using Prism Tomorrow for a dark theme -->
+  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.24.1/themes/prism-tomorrow.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.24.1/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@v1.x/plugins/autoloader/prism-autoloader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    /* Global Styles using Unbounded */
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: 'Unbounded', sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
 
-            0%,
-            100% {
-                transform: translateY(var(--float-distance)) translateX(var(--sway-distance)) rotate(0deg);
-            }
+    a {
+      text-decoration: none;
+    }
 
-            25% {
-                transform: translateY(calc(var(--float-distance) * -0.5)) translateX(calc(var(--sway-distance) * -1)) rotate(calc(var(--rotation-angle) * 0.25));
-            }
+    /* Header */
+    .modern-header {
+      background-color: rgba(0, 0, 0, 0.9);
+      border-bottom: 1px solid #222;
+      transition: background-color 0.3s ease;
+      backdrop-filter: blur(5px);
+    }
 
-            50% {
-                transform: translateY(calc(var(--float-distance) * -1)) translateX(0px) rotate(calc(var(--rotation-angle) * 0.5));
-            }
+    .modern-header.scrolled {
+      background-color: rgba(0, 0, 0, 0.95);
+    }
 
-            75% {
-                transform: translateY(calc(var(--float-distance) * -0.5)) translateX(var(--sway-distance)) rotate(calc(var(--rotation-angle) * 0.75));
-            }
-        }
+    .nav-link {
+      position: relative;
+      transition: color 0.3s ease;
+    }
 
-        .hero-section {
-            position: relative;
-            background: linear-gradient(to bottom, rgba(17, 24, 39, 0.8), rgba(0, 0, 0, 1));
-            overflow: hidden;
-        }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      bottom: -4px;
+      left: 0;
+      background-color: #fff;
+      transition: width 0.3s ease;
+    }
 
-        .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(13, 148, 136, 0.15), transparent 60%);
-            filter: blur(40px);
-        }
+    .nav-link:hover::after {
+      width: 100%;
+    }
 
-        .hero-content {
-            position: relative;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
-            padding: 2rem;
-        }
+    .logo {
+      height: 40px;
+      width: auto;
+    }
 
-        .gradient-text {
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-            background-image: linear-gradient(45deg, #0d9488, #3b82f6);
-        }
+    /* Hero Section */
+    .hero-section {
+      background: linear-gradient(135deg, #000 0%, #111 100%);
+      position: relative;
+      overflow: hidden;
+      padding: 8rem 0 6rem 0;
+    }
 
-        .hero-transition {
-            height: 10px;
-            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 1));
-        }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      animation: fadeInUp 1s ease-out;
+    }
 
-        .modern-header {
-            backdrop-filter: blur(10px);
-            background-color: rgba(17, 24, 39, 0.8);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translate3d(0, 40px, 0);
+      }
 
-        .modern-header.scrolled {
-            background-color: rgba(17, 24, 39, 0.95);
-        }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
 
-        .nav-link {
-            position: relative;
-            transition: color 0.3s ease;
-        }
+    .hero-logo {
+      height: 120px;
+      width: auto;
+      margin-bottom: 1.5rem;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+    }
 
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -4px;
-            left: 0;
-            background-color: #0d9488;
-            transition: width 0.3s ease;
-        }
+    h1,
+    h2 {
+      font-weight: 700;
+    }
 
-        .nav-link:hover::after {
-            width: 100%;
-        }
+    h2.hero-title {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #fff;
+      letter-spacing: 2px;
+    }
 
-        .logo {
-            height: 40px;
-            width: auto;
-        }
+    h2.section-title {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      color: #fff;
+      text-align: center;
+    }
 
-        .hero-logo {
-            height: 120px;
-            width: auto;
-            margin-bottom: 2rem;
-        }
-    </style>
+    p {
+      color: #ccc;
+    }
+
+    /* Button Styles */
+    .btn {
+      display: inline-block;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .btn-primary {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .btn-primary:hover {
+      background-color: #e5e5e5;
+      transform: scale(1.05);
+    }
+
+    /* Section Layout */
+    section {
+      padding: 6rem 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+
+    /* Feature Items */
+    .feature-item {
+      padding: 2rem;
+      border: 1px solid #222;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+    }
+
+    .feature-item:hover {
+      transform: translateY(-5px);
+    }
+
+    /* Code Tabs */
+    .tab-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin-bottom: 1.5rem;
+      background-color: #111;
+      padding: 0.75rem;
+      border-radius: 8px;
+    }
+
+    .tab-trigger {
+      padding: 0.75rem;
+      border-radius: 0.375rem;
+      background: none;
+      color: #aaa;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .tab-trigger[data-state="active"] {
+      background-color: #222;
+      color: #fff;
+    }
+
+    .tab-content {
+      background-color: #111;
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      border: 1px solid #222;
+    }
+
+    /* Code Block Custom Styling */
+    pre[class*="language-"] {
+      background: #000 !important;
+      color: #fff !important;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* Floating Triangles for Decoration */
+    .triangle {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid rgba(255, 255, 255, 0.05);
+      animation: floatTriangle 20s ease-in-out infinite;
+    }
+
+    @keyframes floatTriangle {
+      0%,
+      100% {
+        transform: translateY(0) translateX(0);
+      }
+
+      50% {
+        transform: translateY(-20px) translateX(20px);
+      }
+    }
+
+    /* Footer */
+    footer {
+      background-color: #111;
+      padding: 1.5rem 0;
+      text-align: center;
+      border-top: 1px solid #222;
+      color: #888;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="min-h-screen bg-black text-white">
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="modern-header fixed w-full z-50 py-4">
+      <div class="container flex justify-between items-center">
+        <div class="flex items-center">
+          <img src="./logo.svg" alt="Emittra Logo" class="logo mr-4">
+          <h1 class="text-2xl font-bold">Emittra</h1>
+        </div>
+        <nav class="hidden md:block">
+          <ul class="flex space-x-6">
+            <li><a href="#features" class="nav-link hover:text-white">Features</a></li>
+            <li><a href="#performance" class="nav-link hover:text-white">Performance</a></li>
+            <li><a href="#code-example" class="nav-link hover:text-white">Code Example</a></li>
+            <li><a href="https://github.com/angrymouse/emittra" class="nav-link hover:text-white">Get
+                Started</a></li>
+          </ul>
+        </nav>
+        <button class="md:hidden text-white" id="mobile-menu-button">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+        </button>
+      </div>
+      <div class="md:hidden hidden" id="mobile-menu">
+        <ul class="px-2 pt-2 pb-3 space-y-1">
+          <li><a href="#features" class="block px-3 py-2 rounded hover:bg-gray-800">Features</a></li>
+          <li><a href="#performance" class="block px-3 py-2 rounded hover:bg-gray-800">Performance</a></li>
+          <li><a href="#code-example" class="block px-3 py-2 rounded hover:bg-gray-800">Code Example</a></li>
+          <li><a href="https://github.com/angrymouse/emittra" class="block px-3 py-2 rounded hover:bg-gray-800">Get
+              Started</a></li>
+        </ul>
+      </div>
+    </header>
 
-        <header class="modern-header fixed w-full z-50 py-4">
-            <div class="container mx-auto px-4">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center">
-                        <img src="./logo.svg" alt="Emittra Logo" class="logo mr-4">
-                        <h1 class="text-2xl font-bold gradient-text">
-                            Emittra
-                        </h1>
-                    </div>
-                    <nav class="hidden md:block">
-                        <ul class="flex space-x-6">
-                            <li><a href="#features" class="nav-link text-gray-300 hover:text-white">Features</a></li>
-                            <li><a href="#performance" class="nav-link text-gray-300 hover:text-white">Performance</a>
-                            </li>
-                            <li><a href="#code-example" class="nav-link text-gray-300 hover:text-white">Code Example</a>
-                            </li>
-                            <li><a href="https://codeberg.org/EleutheriaDeutera/emittra"
-                                    class="nav-link text-gray-300 hover:text-white">Get Started</a></li>
-                        </ul>
-                    </nav>
-                    <button class="md:hidden text-white" id="mobile-menu-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="md:hidden hidden" id="mobile-menu">
-                <ul class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                    <li><a href="#features"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Features</a>
-                    </li>
-                    <li><a href="#performance"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Performance</a>
-                    </li>
-                    <li><a href="#code-example"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Code
-                            Example</a></li>
-                    <li><a href="https://codeberg.org/EleutheriaDeutera/emittra"
-                            class="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700">Get
-                            Started</a></li>
-                </ul>
-            </div>
-        </header>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container relative">
+        <div class="hero-content">
+          <img src="./logo.svg" alt="Emittra Logo" class="hero-logo mx-auto">
+          <h2 class="hero-title">Threadsafe, Performant, Simple Library for Event-Driven Programming in C++</h2>
+          <p class="text-xl mb-8">Build your applications in a clean, scalable, event-driven way</p>
+          <a href="https://github.com/angrymouse/emittra" class="btn btn-primary text-xl">Get Started</a>
+        </div>
+      </div>
+      <div id="floating-triangles" class="absolute inset-0 pointer-events-none"></div>
+    </section>
 
+    <!-- Features Section -->
+    <section id="features">
+      <div class="container">
+        <h2 class="section-title">Key Features</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mt-8">
+          <!-- Feature items will be added dynamically by JavaScript -->
+        </div>
+      </div>
+    </section>
 
+    <!-- Performance Section -->
+    <section id="performance">
+      <div class="container">
+        <div class="bg-black border border-gray-800 rounded-xl p-8 shadow-lg mx-4 md:mx-12 lg:mx-24">
+          <h2 class="section-title text-center">Multithreading Performance</h2>
+          <p class="text-xl text-center mb-8">
+            Emittra uses <a class="font-bold hover:underline" href="https://github.com/cameron314/concurrentqueue">moodycamel::ConcurrentQueue</a>
+            for high-performance multithread scheduling.
+          </p>
+        </div>
+      </div>
+    </section>
 
-        <section class="hero-section py-20">
-            <div class="hero-overlay"></div>
-            <div class="container mx-auto px-4 relative z-10">
-                <div class="hero-content text-center">
-                    <img src="./logo.svg" alt="Emittra Logo" class="hero-logo mx-auto">
-                    <h2 class="text-5xl font-bold mb-6 gradient-text">
-                        Advanced Framework for Event-Driven Programming in C++
-                    </h2>
-                    <p class="text-2xl mb-8 text-gray-300">Build your applications in clean, scalable, event driven way
-                    </p>
-                    <a href="https://codeberg.org/EleutheriaDeutera/emittra"
-                        class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-2xl ease-in-out transform hover:scale-105">
-                        Get Started
-                    </a>
-                </div>
-            </div>
-        </section>
-
-
-        <div class="hero-transition"></div>
-
-
-        <section id="features" class="pb-20 relative overflow-hidden">
-            <div id="floating-triangles" class="absolute inset-0"></div>
-            <div class="container mx-auto pb-4 relative z-10">
-                <h2 class="text-3xl font-bold mb-12 text-center">Key Features</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 m-4">
-
-                </div>
-            </div>
-        </section>
-
-
-        <section id="performance" class="py-20 relative overflow-hidden">
-            <div id="floating-triangles-2" class="absolute inset-0"></div>
-            <div class="container mx-auto px-4 relative z-10">
-                <div
-                    class="bg-gray-900 bg-opacity-50 rounded-xl p-8 shadow-2xl mx-4 md:mx-12 lg:mx-24 backdrop-filter backdrop-blur-sm">
-                    <h2 class="text-3xl font-bold mb-8 text-center">Multithreading performance</h2>
-                    <p class="text-xl text-center mb-8">
-                        Emittra was built with multithreaded perfromance in mind, using <a
-                            class="font-bold nav-link hover:text-white text-teal-400"
-                            href="https://github.com/cameron314/concurrentqueue">moodycamel::ConcurrentQueue</a>, a
-                        lock-free, high-performance multithreaded queue as core for multithread scheduling.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-
-        <section id="code-example" class="py-20 relative overflow-hidden">
-            <div id="floating-triangles-3" class="absolute inset-0"></div>
-            <div class="container mx-auto px-4 relative z-10">
-                <h2 class="text-3xl font-bold mb-8 text-center">See Emittra in Action</h2>
-                <div class="tabs w-full">
-                    <div
-                        class="tab-list grid w-full grid-cols-3 mb-4 bg-gray-900 bg-opacity-50 p-1 rounded-lg backdrop-filter backdrop-blur-sm">
-                        <button
-                            class="tab-trigger py-2 px-4 rounded data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-                            data-tab="basic">Basic Usage</button>
-                        <button
-                            class="tab-trigger py-2 px-4 rounded data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-                            data-tab="request">Request/Response</button>
-                        <button
-                            class="tab-trigger py-2 px-4 rounded data-[state=active]:bg-gray-800 data-[state=active]:text-white"
-                            data-tab="multithreaded">Multithreaded</button>
-                    </div>
-                    <div id="basic"
-                        class="tab-content bg-gray-900 bg-opacity-50 p-6 rounded-lg overflow-x-auto shadow-2xl border border-gray-800 backdrop-filter backdrop-blur-sm">
-                        <pre><code class="language-cpp">
+    <!-- Code Example Section -->
+    <section id="code-example">
+      <div class="container">
+        <h2 class="section-title text-center">See Emittra in Action</h2>
+        <div class="tabs mt-8">
+          <div class="tab-list">
+            <button class="tab-trigger" data-tab="basic">Basic Usage</button>
+            <button class="tab-trigger" data-tab="request">Request/Response</button>
+            <button class="tab-trigger" data-tab="multithreaded">Multithreaded</button>
+          </div>
+          <div id="basic" class="tab-content">
+            <pre><code class="language-cpp">
 #include "emittra/emittra.hpp"
 #include &lt;iostream&gt;
 #include &lt;string&gt;
@@ -240,7 +338,7 @@ int main() {
 
     // Register an event listener
     emitter.on("greet", [](const auto& respond, const std::vector&lt;std::any&gt;& args) {
-        std::cout &lt;&lt; "Hello, " &lt;&lt; std::any_cast&lt;std::string&gt;(args[0]) &lt;&lt; "!" &lt;&lt; std::endl;
+        std::cout << "Hello, " << std::any_cast&lt;std::string&gt;(args[0]) << "!" << std::endl;
     });
 
     // Emit an event
@@ -251,11 +349,10 @@ int main() {
 
     return 0;
 }
-                        </code></pre>
-                    </div>
-                    <div id="request"
-                        class="tab-content hidden bg-gray-900 bg-opacity-50 p-6 rounded-lg overflow-x-auto shadow-2xl border border-gray-800 backdrop-filter backdrop-blur-sm">
-                        <pre><code class="language-cpp">
+            </code></pre>
+          </div>
+          <div id="request" class="tab-content hidden">
+            <pre><code class="language-cpp">
 #include "emittra/emittra.hpp"
 #include &lt;iostream&gt;
 #include &lt;future&gt;
@@ -263,8 +360,8 @@ int main() {
 int main() {
     emittra::Emittra emitter;
 
-    emitter.on("calculate", [](const emittra::Emittra::RespondFunction& respond, const std::vector&lt;std::any&gt;& args) {
-        auto [a,b] = emittra::demarshall_args&lt;int,int&gt;(args);
+    emitter.on("calculate", [](const auto& respond, const std::vector&lt;std::any&gt;& args) {
+        auto [a, b] = emittra::demarshall_args&lt;int, int&gt;(args);
         respond(a + b);
     });
 
@@ -273,15 +370,14 @@ int main() {
     // Process the request
     emitter.flush();
 
-    std::cout &lt;&lt; "Result: " &lt;&lt; std::any_cast&lt;int&gt;(result.get()) &lt;&lt; std::endl;
+    std::cout << "Result: " << std::any_cast&lt;int&gt;(result.get()) << std::endl;
 
     return 0;
 }
-                        </code></pre>
-                    </div>
-                    <div id="multithreaded"
-                        class="tab-content hidden bg-gray-900 bg-opacity-50 p-6 rounded-lg overflow-x-auto shadow-2xl border border-gray-800 backdrop-filter backdrop-blur-sm">
-                        <pre><code class="language-cpp">
+            </code></pre>
+          </div>
+          <div id="multithreaded" class="tab-content hidden">
+            <pre><code class="language-cpp">
 #include "emittra/emittra.hpp"
 #include &lt;iostream&gt;
 #include &lt;thread&gt;
@@ -295,7 +391,7 @@ int main() {
     std::thread worker([&emitter, &stop_processing]() {
         emitter.on("data", [](const auto& respond, const auto& args) {
             auto [value] = emittra::demarshall_args&lt;int&gt;(args);
-            std::cout &lt;&lt; "Worker processed data: " &lt;&lt; value &lt;&lt; std::endl;
+            std::cout << "Worker processed data: " << value << std::endl;
             respond(value * 2);
         });
         auto events_cv = emitter.make_cv({"data"});
@@ -313,145 +409,113 @@ int main() {
 
     auto future = emitter.request("data", {4});
     auto result = std::any_cast&lt;int&gt;(future.get());
-    std::cout &lt;&lt; "Main received result: " &lt;&lt; result &lt;&lt; std::endl;
+    std::cout << "Main received result: " << result << std::endl;
 
     stop_processing = true;
     worker.join();
 
     return 0;
 }
-                        </code></pre>
-                    </div>
-                </div>
-            </div>
-        </section>
+            </code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <!-- Call to Action Section -->
-        <section id="cta" class="py-20 relative overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-t from-teal-900 to-black opacity-30"></div>
-            <div class="container mx-auto px-4 relative z-10">
-                <h2 class="text-3xl font-bold mb-8 text-center">Ready to event-drive your C++ project?</h2>
-                <div class="max-w-md mx-auto">
-                    <div class="flex content-center justify-center">
-                        <a href="https://codeberg.org/EleutheriaDeutera/emittra"
-                            class="bg-teal-600 hover:bg-teal-700 button-3xl text-3xl text-white font-bold py-2 px-4 rounded-lg">
-                            Get Started
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <!-- Call to Action Section -->
+    <section id="cta">
+      <div class="container text-center">
+        <h2 class="section-title">Ready to event-drive your C++ project?</h2>
+        <a href="https://github.com/angrymouse/emittra" class="btn btn-primary text-xl mt-4">
+          Get Started
+        </a>
+      </div>
+    </section>
 
-        <!-- Footer -->
-        <footer class="py-6 bg-gray-900 bg-opacity-50 backdrop-filter backdrop-blur-sm">
-            <div class="container mx-auto px-4 text-center text-gray-400">
-                <p>&copy; 2024 Emittra. All rights reserved.</p>
-                <p class="mt-2">Licensed under Apache 2.0</p>
-            </div>
-        </footer>
-    </div>
-    <script>
-        // Add floating triangles
-        function addFloatingTriangles(containerId, count) {
-            const container = document.getElementById(containerId);
-            for (let i = 0; i < count; i++) {
-                const triangle = document.createElement('div');
-                triangle.className = 'absolute w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[40px] border-teal-500 opacity-5';
-                triangle.style.left = `${Math.random() * 100}%`;
-                triangle.style.top = `${Math.random() * 100}%`;
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2024 Emittra. All rights reserved.</p>
+        <p class="mt-2">Licensed under Apache 2.0</p>
+      </div>
+    </footer>
+  </div>
 
-                // Generate random animation parameters
-                const duration = 10 + Math.random() * 20; // Between 10 and 30 seconds
-                const floatDistance = 10 + Math.random() * 20; // Between 10 and 30 pixels
-                const swayDistance = 5 + Math.random() * 15; // Between 5 and 20 pixels
-                const rotationAngle = (Math.random() < 0.5 ? 360 : -360); // Full rotation clockwise or counterclockwise
+  <script>
+    // Floating triangles for subtle decoration
+    function addFloatingTriangles(containerId, count) {
+      const container = document.getElementById(containerId);
+      for (let i = 0; i < count; i++) {
+        const triangle = document.createElement('div');
+        triangle.className = 'triangle';
+        triangle.style.left = `${Math.random() * 100}%`;
+        triangle.style.top = `${Math.random() * 100}%`;
+        triangle.style.animationDuration = `${15 + Math.random() * 15}s`;
+        triangle.style.animationDelay = `${-Math.random() * 15}s`;
+        container.appendChild(triangle);
+      }
+    }
 
-                // Set custom properties for the animation
-                triangle.style.setProperty('--float-distance', `${floatDistance}px`);
-                triangle.style.setProperty('--sway-distance', `${swayDistance}px`);
-                triangle.style.setProperty('--rotation-angle', `${rotationAngle}deg`);
+    // Feature items for the Key Features section
+    const features = [
+      { icon: 'columns-3', title: "Parallel-First Design", description: "Emit and handle events across threads safely" },
+      { icon: 'bolt', title: "Fine-grained Control", description: "Precise control over event processing and loops" },
+      { icon: 'layout', title: "Separation of Concerns", description: "Modular event-driven architecture" },
+      { icon: 'git-pull-request', title: "Request/Response", description: "Allow event handlers to respond to events" }
+    ];
 
-                // Apply the animation
-                triangle.style.animation = `triangleMotion ${duration}s ease-in-out infinite`;
+    const featureContainer = document.querySelector('#features .grid');
+    features.forEach(feature => {
+      const featureItem = document.createElement('div');
+      featureItem.className = 'feature-item';
+      featureItem.innerHTML = `
+          <i data-lucide="${feature.icon}" class="w-8 h-8 mb-4"></i>
+          <h3 class="text-xl font-semibold mb-2">${feature.title}</h3>
+          <p class="text-gray-400">${feature.description}</p>
+      `;
+      featureContainer.appendChild(featureItem);
+    });
 
-                // Set a random delay for the animation
-                const delay = -Math.random() * duration;
-                triangle.style.animationDelay = `${delay}s`;
-
-                container.appendChild(triangle);
-            }
-        }
-
-        // Feature items
-        const features = [
-            { icon: 'columns-3', title: "Parallel-First Design", description: "Emit and handle events across threads safely" },
-            { icon: 'bolt', title: "Fine-grained Control", description: "Precise control over event processing and loops" },
-            { icon: 'table-columns-split', title: "Separation of Concerns", description: "Event emitters form powerful and clean modular architecture" },
-            { icon: 'git-pull-request-arrow', title: "Request/Response Ability", description: "Allow event handlers to respond to events" }
-        ];
-
-        // Populate feature items
-        const featureContainer = document.querySelector('.grid');
-        features.forEach(feature => {
-            const featureItem = document.createElement('div');
-            featureItem.className = 'bg-gray-900 bg-opacity-50 p-6 rounded-lg backdrop-filter backdrop-blur-sm transform hover:scale-105 transition duration-300';
-            featureItem.innerHTML = `
-                <i data-lucide="${feature.icon}" class="w-8 h-8 mb-4 text-teal-400"></i>
-                <h3 class="text-xl font-semibold mb-2">${feature.title}</h3>
-                <p class="text-gray-300">${feature.description}</p>
-            `;
-            featureContainer.appendChild(featureItem);
+    // Tab functionality for code examples
+    function setupTabs() {
+      const tabs = document.querySelectorAll('.tab-trigger');
+      const contents = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const target = tab.getAttribute('data-tab');
+          tabs.forEach(t => t.removeAttribute('data-state'));
+          tab.setAttribute('data-state', 'active');
+          contents.forEach(c => c.classList.add('hidden'));
+          document.getElementById(target).classList.remove('hidden');
         });
+      });
+      // Activate first tab by default.
+      tabs[0].click();
+    }
 
-        // Tab functionality
-        function setupTabs() {
-            const tabs = document.querySelectorAll('.tab-trigger');
-            const contents = document.querySelectorAll('.tab-content');
+    document.addEventListener('DOMContentLoaded', () => {
+      addFloatingTriangles('floating-triangles', 15);
+      setupTabs();
+      lucide.createIcons();
+      Prism.highlightAll();
 
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const target = tab.getAttribute('data-tab');
-                    tabs.forEach(t => t.setAttribute('data-state', ''));
-                    tab.setAttribute('data-state', 'active');
-                    contents.forEach(c => c.classList.add('hidden'));
-                    document.getElementById(target).classList.remove('hidden');
-                });
-            });
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-
-            addFloatingTriangles('floating-triangles', 20);
-            addFloatingTriangles('floating-triangles-2', 10);
-            addFloatingTriangles('floating-triangles-3', 15);
-            setupTabs();
-            lucide.createIcons();
-            Prism.highlightAll();
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-
-            mobileMenuButton.addEventListener('click', () => {
-                mobileMenu.classList.toggle('hidden');
-            });
-
-
-            const mobileMenuLinks = mobileMenu.querySelectorAll('a');
-            mobileMenuLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    mobileMenu.classList.add('hidden');
-                });
-            });
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+      mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          mobileMenu.classList.add('hidden');
         });
-        window.addEventListener('scroll', () => {
-            const header = document.querySelector('.modern-header');
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        });
-    </script>
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      const header = document.querySelector('.modern-header');
+      header.classList.toggle('scrolled', window.scrollY > 50);
+    });
+  </script>
 </body>
 
 </html>
