@@ -14,7 +14,7 @@ Emittra is a high-performance, thread-first C++ framework/library for event-driv
 
 ## Performance
 
-Emittra could handle to 2.5 million events per second on a 6-core AMD Ryzen 5 1600 processor, but more community benchmarks are welcome. To contribute one, see [Contributing](#contributing)
+Emittra could handle to 61,622,600 events per second on a 16-core AMD Ryzen 9 5950X processor, but more community benchmarks are welcome. To contribute one, see [Contributing](#contributing)
 
 ## Requirements
 
