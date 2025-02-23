@@ -25,7 +25,7 @@ Emittra could handle to 61,622,600 events per second on a 16-core AMD Ryzen 9 59
 
 1. Clone the repository:
    ```
-   git clone https://codeberg.org/EleutheriaDeutera/emittra
+   git clone https://github.com/angrymouse/emittra
    cd emittra
    ```
 
@@ -190,7 +190,7 @@ Apache-2.0
 
 Issues, merge requests are welcome! 
 
-Development happens on codeberg - [Emittra](https://codeberg.org/EleutheriaDeutera/emittra)  
+Development happens on codeberg - [Emittra](https://github.com/angrymouse/emittra)  
 
 ## Contact
 
