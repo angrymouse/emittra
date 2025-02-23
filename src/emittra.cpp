@@ -1,6 +1,9 @@
 #include "emittra.hpp"
 #include <future>
 #include <vector>
+#include <algorithm>
+#include <mutex>
+#include <shared_mutex>
 
 namespace emittra {
 
@@ -23,12 +26,12 @@ void Emittra::on(const std::string& event_name, EventCallback callback) {
 void Emittra::emit(const std::string& event_name, const std::vector<std::any>& args) {
     auto event_data = get_or_create_event_data(event_name);
     event_data->event_queue.enqueue({args, nullptr});
-
 }
+
 void Emittra::emit(const std::string& event_name, const std::vector<std::any>& args, bool notify) {
     auto event_data = get_or_create_event_data(event_name);
     event_data->event_queue.enqueue({args, nullptr});
-    if(notify){
+    if (notify) {
         event_data->cv.notify_one();
         notify_associated_cvs(event_data);
     }
@@ -64,7 +67,7 @@ void Emittra::remove_listener(const std::string& event_name, const EventCallback
     auto event_data = get_or_create_event_data(event_name);
     std::unique_lock<std::shared_mutex> lock(event_data->mutex);
     auto& event_listeners = event_data->listeners;
-    event_listeners.erase(
+   event_listeners.erase(
         std::remove_if(event_listeners.begin(), event_listeners.end(),
             [&callback](const EventCallback& cb) {
                 return cb.target_type() == callback.target_type();
@@ -152,7 +155,7 @@ bool Emittra::enqueue_bulk(const std::string& event_name, const std::vector<std:
 }
 
 bool Emittra::enqueue_bulk(const std::string& event_name, const std::vector<std::vector<std::any>>& bulk_args, bool notify){
-    bool result=Emittra::enqueue_bulk(event_name, bulk_args);
+    bool result = Emittra::enqueue_bulk(event_name, bulk_args);
     auto event_data = get_or_create_event_data(event_name);
     event_data->cv.notify_one();
     notify_associated_cvs(event_data);
@@ -162,7 +165,8 @@ bool Emittra::enqueue_bulk(const std::string& event_name, const std::vector<std:
 size_t Emittra::try_dequeue_bulk(const std::string& event_name, std::vector<std::vector<std::any>>& bulk_args, size_t max_items) {
     auto event_data = get_or_create_event_data(event_name);
     std::vector<QueuedEvent> events(max_items);
-    size_t dequeued = event_data->event_queue.try_dequeue_bulk(events.begin(), max_items);
+    moodycamel::ConsumerToken token(event_data->event_queue);
+    size_t dequeued = event_data->event_queue.try_dequeue_bulk(token, events.begin(), max_items);
     bulk_args.clear();
     bulk_args.reserve(dequeued);
     for (size_t i = 0; i < dequeued; ++i) {
@@ -172,6 +176,12 @@ size_t Emittra::try_dequeue_bulk(const std::string& event_name, std::vector<std:
 }
 
 std::shared_ptr<Emittra::EventData> Emittra::get_or_create_event_data(const std::string& event_name) {
+    {
+        std::shared_lock<std::shared_mutex> lock(events_mutex);
+        if (auto it = events.find(event_name); it != events.end() && it->second) {
+            return it->second;
+        }
+    }
     std::unique_lock<std::shared_mutex> lock(events_mutex);
     auto& event_data = events[event_name];
     if (!event_data) {
@@ -179,19 +189,40 @@ std::shared_ptr<Emittra::EventData> Emittra::get_or_create_event_data(const std:
     }
     return event_data;
 }
+
 void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
     constexpr size_t BULK_SIZE = 50000;
+    moodycamel::ConsumerToken token(event_data->event_queue);
     std::vector<QueuedEvent> events;
     events.reserve(BULK_SIZE);
 
-    size_t dequeued_count = event_data->event_queue.try_dequeue_bulk(std::back_inserter(events), BULK_SIZE);
+    size_t dequeued_count = event_data->event_queue.try_dequeue_bulk(token, std::back_inserter(events), BULK_SIZE);
 
-    if (dequeued_count > 0) {
+    if (dequeued_count == 0) return;
+
+    std::vector<EventCallback> listeners_copy;
+    {
         std::shared_lock<std::shared_mutex> lock(event_data->mutex);
-        
+        listeners_copy = event_data->listeners;
+    }
+
+    if (listeners_copy.empty()) {
+     for (auto&& event : events) {
+            if (event.response_promise) {
+                event.response_promise->set_value(std::any());
+            }
+        }
+        event_data->cv.notify_all();
+        notify_associated_cvs(event_data);
+        return;
+    }
+
+    bool any_response = std::any_of(events.begin(), events.end(),
+        [](const QueuedEvent& e) { return e.response_promise != nullptr; });
+
+    if (any_response) {
         for (auto&& event : events) {
             bool response_set = false;
-
             auto respond_func = [&response_set, &event](const std::any& response) {
                 if (event.response_promise && !response_set) {
                     event.response_promise->set_value(response);
@@ -199,7 +230,7 @@ void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
                 }
             };
 
-            for (const auto& callback : event_data->listeners) {
+            for (const auto& callback : listeners_copy) {
                 std::invoke(callback, respond_func, event.args);
             }
 
@@ -207,21 +238,33 @@ void Emittra::process_queue(const std::shared_ptr<EventData>& event_data) {
                 event.response_promise->set_value(std::any());
             }
         }
-        lock.unlock(); 
-        event_data->cv.notify_all();
-        notify_associated_cvs(event_data);
-    }
-}
-void Emittra::notify_associated_cvs(const std::shared_ptr<EventData>& event_data) {
-    std::shared_lock<std::shared_mutex> lock(event_data->mutex);
-    for (auto it = event_data->associated_cvs.begin(); it != event_data->associated_cvs.end();) {
-        if (auto cv = it->lock()) {
-            cv->notify_all();
-            ++it;
-        } else {
-            it = event_data->associated_cvs.erase(it);
+    } else {
+    auto dummy_respond = [](const std::any&) {};
+        for (auto&& event : events) {
+            for (const auto& callback : listeners_copy) {
+                std::invoke(callback, dummy_respond, event.args);
+            }
         }
     }
+
+    event_data->cv.notify_all();
+    notify_associated_cvs(event_data);
+}
+
+void Emittra::notify_associated_cvs(const std::shared_ptr<EventData>& event_data) {
+  std::unique_lock<std::shared_mutex> lock(event_data->mutex);
+    auto& cvs = event_data->associated_cvs;
+    cvs.erase(
+        std::remove_if(cvs.begin(), cvs.end(), 
+            [](const std::weak_ptr<std::condition_variable_any>& weak_cv) {
+                if (auto cv = weak_cv.lock()) {
+                    cv->notify_all();
+                    return false;
+                }
+                return true;
+            }),
+        cvs.end()
+    );
 }
 
 } // namespace emittra
